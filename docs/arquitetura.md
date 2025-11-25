@@ -182,7 +182,9 @@ Zabbix Server → AD/LDAP (planejado)
   - TCP 389
   - Autenticação de usuários do domínio
 
-5. Objetivo da Arquitetura
+---
+
+## 5. Objetivo da Arquitetura
 
 Esta arquitetura foi pensada para:
 
@@ -212,7 +214,9 @@ Separando funções (banco, aplicação, visualização).
 
 Permitindo escalar (separar MariaDB, Grafana, proxies Zabbix, etc.).
 
-6. Considerações de Produção (Além do Lab)
+---
+
+## 6. Considerações de Produção (Além do Lab)
 
 Para um ambiente real, a mesma arquitetura pode ser endurecida com:
 
@@ -236,4 +240,4 @@ Expor apenas portas necessárias para redes específicas.
 
 Este documento descreve como o lab está organizado e abre caminho para evolução do ambiente em direção a um cenário de produção mais robusto.
 
-::contentReference[oaicite:0]{index=0}
+
