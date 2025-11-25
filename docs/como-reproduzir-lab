@@ -1,0 +1,142 @@
+## Como reproduzir o lab
+
+Este lab foi pensado para ser reproduzido em ambiente de teste usando **VirtualBox** e **Ubuntu Server 22.04**.
+
+### 1. Pré-requisitos
+
+- Máquina física com:
+  - 8 GB de RAM ou mais
+  - Processador com suporte a virtualização (Intel VT-x / AMD-V)
+  - Acesso à internet
+- Software:
+  - Oracle VirtualBox instalado
+  - ISO do **Ubuntu Server 22.04 (64-bit)**
+  - Acesso ao Git e ao repositório:
+    - https://github.com/StormLander0800/monitoring-lab-zabbix-grafana-
+
+---
+
+### 2. Criar a VM do servidor (SVRZABBIX)
+
+No VirtualBox:
+
+1. Clique em **Novo** e configure:
+   - **Nome:** `SVRZABBIX`
+   - **Sistema Operacional:** Linux → Ubuntu (64-bit)
+2. Recursos da VM (sugestão – igual ao meu lab):
+   - **Memória RAM:** `2048 MB` (2 GB)
+   - **Processadores:** `4 vCPUs`
+   - **Disco rígido:** `25 GB` (VDI, dinamicamente alocado)
+3. Ajustes adicionais:
+   - **Tela:** vídeo padrão (16 MB já é suficiente)
+   - **Rede:**  
+     - Adaptador 1: **Placa em modo Bridge** (usa a placa de rede física, como na imagem)  
+       > Isso permite acessar o Zabbix/Grafana pelo IP da VM direto na sua rede local.
+   - Deixe áudio/USB/compartilhamento de pastas como padrão (opcional).
+
+---
+
+### 3. Instalar o Ubuntu Server
+
+Inicie a VM `SVRZABBIX` com a ISO do Ubuntu:
+
+1. Siga o instalador normalmente e configure:
+   - **Hostname:** `svrzabbix`
+   - Usuário e senha de sua preferência (ex.: `zabbixadm`)
+2. Recomendações:
+   - Instalação **Ubuntu Server** (sem interface gráfica)
+   - Habilite **OpenSSH Server** (para poder acessar via SSH)
+3. Configure IP estático (exemplo do meu lab):
+   - IP: `192.168.4.212`
+   - Máscara: conforme sua rede (ex.: `255.255.255.0`)
+   - Gateway/DNS: IP do seu roteador ou servidor de DNS
+
+Após concluir a instalação, reinicie a VM e faça login.
+
+---
+
+### 4. Clonar o repositório dentro da VM
+
+Já logado no Ubuntu:
+
+```bash
+sudo apt update && sudo apt install -y git
+git clone https://github.com/StormLander0800/monitoring-lab-zabbix-grafana-.git
+cd monitoring-lab-zabbix-grafana-
+
+5. Instalar o Zabbix Server + Banco de Dados
+
+No repositório existe um script de instalação para o servidor:
+
+cd scripts
+sudo chmod +x install_zabbix_server_ubuntu.sh
+sudo ./install_zabbix_server_ubuntu.sh
+
+O script irá:
+
+Instalar o Zabbix Server (7.x)
+
+Configurar o banco de dados (MariaDB/MySQL)
+
+Subir a interface web do Zabbix
+
+Ao final, acesse no navegador da sua máquina física:
+
+http://SEU_IP_DO_SVRZABBIX/zabbix
+(ex.: http://192.168.4.212/zabbix)
+
+6. Instalar e integrar o Grafana
+
+Depois do Zabbix instalado, siga o passo a passo em:
+
+docs/instalacao-grafana.md
+
+Em resumo, o fluxo é:
+
+Instalar Grafana no SVRZABBIX
+
+Configurar o datasource do Zabbix no Grafana
+
+Importar dashboards de exemplo ou criar os seus
+
+Acesso padrão:
+
+http://SEU_IP_DO_SVRZABBIX:3000/
+
+7. Adicionar hosts ao monitoramento
+7.1. Agente Zabbix em Windows
+
+No repositório há um script para facilitar:
+
+# No host Windows
+# Abrir PowerShell como Administrador e executar:
+.\scripts\install_zabbix_agent_windows.ps1
+
+Ajuste o IP do servidor Zabbix no script, se necessário.
+
+7.2. Agente Zabbix em Linux
+
+Em um host Linux que será monitorado:
+
+# Exemplo genérico (veja detalhes em docs/):
+sudo apt update
+sudo apt install -y zabbix-agent
+# Ajustar o Server=SEU_IP_DO_SVRZABBIX no zabbix_agentd.conf
+sudo systemctl enable --now zabbix-agent
+
+Depois, cadastre os hosts na interface web do Zabbix.
+
+8. Próximos passos
+
+Os próximos aprimoramentos do lab estão descritos em:
+
+docs/proximos-passos.md
+
+Incluem:
+
+Integração com LDAP/AD
+
+Criação de dashboards específicos no Grafana
+
+Ajustes de templates, triggers e notificações no Zabbix
+
