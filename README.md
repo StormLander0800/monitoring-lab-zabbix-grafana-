@@ -41,3 +41,6 @@ Toda a documentação detalhada está na pasta [`docs/`](docs/):
 - 🔧 LDAP/AD em configuração
 - 🔧 Dashboards adicionais em construção
 
+
+![Visão global do Zabbix](images/dashboard-global-view.png)
+![Dashboard no Grafana](images/grafana-dashboard.png)
