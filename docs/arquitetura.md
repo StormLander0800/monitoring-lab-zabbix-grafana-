@@ -181,7 +181,7 @@ Fluxo:
 Zabbix Server → AD/LDAP (planejado)
   - TCP 389
   - Autenticação de usuários do domínio
-
+--
 ---
 
 ## 5. Objetivo da Arquitetura
@@ -239,5 +239,6 @@ Hardening de firewall:
 Expor apenas portas necessárias para redes específicas.
 
 Este documento descreve como o lab está organizado e abre caminho para evolução do ambiente em direção a um cenário de produção mais robusto.
+
 
 
