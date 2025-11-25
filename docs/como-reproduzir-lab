@@ -1,7 +1,6 @@
 ````text
---- TRECHO PARA O README.md ---
 
-## Como reproduzir o lab (resumo)
+## `Como reproduzir o lab`
 
 1. Crie uma VM no VirtualBox:
    - Nome: `SVRZABBIX`
