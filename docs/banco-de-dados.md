@@ -21,8 +21,6 @@ sudo systemctl status mariadb
 2. Configuração Básica de Segurança
 Opcional, mas recomendado:
 
-bash
-Copiar código
 sudo mysql_secure_installation
 Passos típicos:
 
@@ -37,13 +35,10 @@ Desabilitar login remoto do root (conforme necessidade do lab/produção).
 3. Criação do Banco e Usuário para o Zabbix
 Acessar o MySQL/MariaDB:
 
-bash
-Copiar código
 sudo mysql -uroot -p
 Dentro do shell:
 
-sql
-Copiar código
+
 CREATE DATABASE zabbix CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
 
 CREATE USER 'zabbix'@'localhost' IDENTIFIED BY '<SENHA_BANCO_ZABBIX>';
@@ -61,14 +56,12 @@ Senha: <SENHA_BANCO_ZABBIX>
 4. Importar Schema do Zabbix
 Após instalar pacotes do Zabbix:
 
-bash
-Copiar código
+
 zcat /usr/share/zabbix-sql-scripts/mysql/server.sql.gz | \
   mysql -uzabbix -p'<SENHA_BANCO_ZABBIX>' zabbix
 Verificar:
 
-bash
-Copiar código
+
 mysql -uzabbix -p'<SENHA_BANCO_ZABBIX>' zabbix -e "show tables;" | head
 5. Ajustes de Configuração (opcional)
 Arquivo principal do MariaDB (varia de distro):
@@ -89,16 +82,12 @@ Em laboratório, ajustes finos não são obrigatórios, mas em produção é imp
 6. Testes de Conectividade
 Testar acesso com usuário do Zabbix:
 
-bash
-Copiar código
 mysql -uzabbix -p'<SENHA_BANCO_ZABBIX>' -h localhost zabbix -e "select 1;"
 Se retornar 1, a conexão está OK.
 
 7. Backup (conceito)
 Sugestão simples de backup lógico:
 
-bash
-Copiar código
 mysqldump -u zabbix -p'<SENHA_BANCO_ZABBIX>' zabbix > /backup/zabbix_$(date +%F).sql
 Em produção, considerar:
 
@@ -107,4 +96,5 @@ Backups agendados (cron).
 Backup off-site.
 
 Testes regulares de restauração.
+
 
