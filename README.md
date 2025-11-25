@@ -33,6 +33,13 @@ Toda a documentação detalhada está na pasta [`docs/`](docs/):
 - [Integração com LDAP/Active Directory](docs/ldap-ad.md)
 - [Próximos passos e melhorias](docs/proximos-passos.md)
 
+## Scripts
+
+Todos os Scripsts de instalação zabbix estão na pasta [`scripts/`](scripts/)
+
+- [Instalador Zabbix Agent Windowss](scripts/innstall_zabbix_agent_windows.ps1)
+- [Instalador Zabbix Agent Ubuntu](scripts/innstall_zabbix_agent_ubuntu.sh)
+
 ## Status
 
 - ✅ Zabbix Server instalado e operando
@@ -43,4 +50,5 @@ Toda a documentação detalhada está na pasta [`docs/`](docs/):
 
 
 ![Visão global do Zabbix](images/dashboard-global-view.png)
+
 ![Dashboard no Grafana](images/grafana-dashboard.png)
