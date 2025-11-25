@@ -48,6 +48,31 @@ Todos os Scripsts de instalação zabbix estão na pasta [`scripts/`](scripts/)
 - 🔧 LDAP/AD em configuração
 - 🔧 Dashboards adicionais em construção
 
+## Arquitetura
+
+[ Usuário ]
+   |                             
+   | HTTP 80             HTTP 3000
+   |------------------.   .-----------------> [ Grafana ]
+                      |   |                        |
+                      v   | HTTP API               | (Data source Zabbix)
+              [ Zabbix Frontend ]                  |
+                      |                            |
+                      | PHP / Interno              v
+                      |                     [ Zabbix API ]
+                      |                            |
+                      v                            |
+                [ Zabbix Server ]-------------------
+                      |
+          ---------------------------
+          |                        |
+     TCP 3306                 TCP 10050
+          |                        |
+    [ MariaDB ]              [ Zabbix Agents ]
+                               (SVR-ZABBIX, SVR02, PCs)
+
+
+## Dashboards
 
 ![Visão global do Zabbix](images/dashboard-global-view.png)
 
