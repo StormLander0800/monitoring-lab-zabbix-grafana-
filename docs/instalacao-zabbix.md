@@ -17,28 +17,20 @@ sudo apt update
 sudo apt upgrade -y
 Instalar utilitários básicos:
 
-bash
-Copiar código
 sudo apt install -y vim nano curl wget net-tools sysstat \
   software-properties-common gnupg2
 2. Configurar Locale e Timezone
 Timezone:
 
-bash
-Copiar código
 sudo timedatectl set-timezone America/Sao_Paulo
 Locales (português Brasil):
 
-bash
-Copiar código
 sudo apt install -y language-pack-pt
 sudo locale-gen pt_BR.UTF-8
 sudo update-locale
 3. Instalação do Banco de Dados (MariaDB/MySQL)
 Instalar servidor de banco:
 
-bash
-Copiar código
 sudo apt install -y mariadb-server mariadb-client
 sudo systemctl enable mariadb
 sudo systemctl start mariadb
@@ -47,40 +39,32 @@ sudo systemctl start mariadb
 4. Adicionar Repositório do Zabbix
 Exemplo usando Zabbix 7.0 em Ubuntu 22.04:
 
-bash
-Copiar código
+
 cd /tmp
 wget https://repo.zabbix.com/zabbix/7.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_7.0-1+ubuntu22.04_all.deb
 
 sudo dpkg -i zabbix-release_7.0-1+ubuntu22.04_all.deb
 sudo apt update
 5. Instalar Zabbix Server, Frontend e Agent
-bash
-Copiar código
+
 sudo apt install -y zabbix-server-mysql zabbix-frontend-php \
   zabbix-apache-conf zabbix-sql-scripts zabbix-agent
 6. Importar Schema do Zabbix no Banco
 Após criar o banco e o usuário (ver banco-de-dados.md):
 
-bash
-Copiar código
 zcat /usr/share/zabbix-sql-scripts/mysql/server.sql.gz | \
   mysql -uzabbix -p'<SENHA_BANCO_ZABBIX>' zabbix
 Verificar se as tabelas foram criadas:
 
-bash
-Copiar código
+
 mysql -uzabbix -p'<SENHA_BANCO_ZABBIX>' zabbix -e "show tables;" | head
 7. Configurar zabbix_server.conf
 Editar:
 
-bash
-Copiar código
+
 sudo nano /etc/zabbix/zabbix_server.conf
 Ajustar:
 
-ini
-Copiar código
 DBHost=localhost
 DBName=zabbix
 DBUser=zabbix
@@ -96,24 +80,20 @@ Timezone PHP:
 
 Dentro de zabbix.conf (ou outro arquivo de PHP do Zabbix):
 
-apache
-Copiar código
+
 php_value date.timezone America/Sao_Paulo
 Validar configuração do Apache:
 
-bash
-Copiar código
+
 sudo apache2ctl configtest
 # Deve retornar "Syntax OK"
 Reiniciar Apache:
 
-bash
-Copiar código
+
 sudo systemctl restart apache2
 sudo systemctl enable apache2
 9. Iniciar Serviços do Zabbix
-bash
-Copiar código
+
 sudo systemctl restart zabbix-server zabbix-agent
 sudo systemctl enable zabbix-server zabbix-agent
 sudo systemctl status zabbix-server
@@ -122,8 +102,6 @@ O zabbix-server deve ficar active (running).
 10. Primeiro Acesso ao Zabbix
 No navegador:
 
-text
-Copiar código
 http://<IP_ZABBIX>/zabbix
 Seguir o wizard:
 
@@ -152,5 +130,6 @@ Login inicial:
 Usuário: Admin
 
 Senha padrão: zabbix (recomendado trocar em seguida).
+
 
 Em lab, pode ser mudada para outra senha forte, documentada fora do repositório ou usando placeholders neste projeto.
