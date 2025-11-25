@@ -29,8 +29,6 @@ Instalar:
 sudo apt install -y ldap-utils
 Teste de bind + busca:
 
-bash
-Copiar código
 ldapsearch -x -H ldap://<IP_AD>:389 \
   -D "CN=zabbix ldap,OU=zabbix,DC=joao23,DC=local" -W \
   -b "DC=joao23,DC=local" "(sAMAccountName=washington.meireles)"
@@ -162,5 +160,6 @@ Ajustar Atributo de pesquisa e Filtro de busca:
 Para login via UPN (e-mail):
 
 Atributo: userPrincipalName
+
 
 Filtro: (&(objectClass=user)(userPrincipalName={user}))
