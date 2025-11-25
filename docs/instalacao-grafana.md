@@ -24,16 +24,14 @@ sudo apt update
 sudo apt install -y grafana
 Habilitar e iniciar serviço:
 
-bash
-Copiar código
+
 sudo systemctl enable grafana-server
 sudo systemctl start grafana-server
 sudo systemctl status grafana-server
 2. Primeiro Acesso ao Grafana
 No navegador:
 
-text
-Copiar código
+
 http://<IP_ZABBIX>:3000/
 Credenciais padrão:
 
@@ -49,8 +47,6 @@ Nova senha: <SENHA_ADMIN_GRAFANA>
 3. Instalar Plugin Zabbix no Grafana
 No servidor (opcional, se não vier no pacote):
 
-bash
-Copiar código
 sudo grafana-cli plugins install alexanderzobnin-zabbix-app
 sudo systemctl restart grafana-server
 Ou utilizar plugins disponíveis via interface web (Admin → Plugins).
@@ -122,5 +118,6 @@ Criar um usuário específico no Zabbix para o Grafana (ex.: grafana-api).
 Atribuir apenas permissões necessárias (somente leitura).
 
 Trocar a senha padrão do admin do Grafana assim que o ambiente estiver funcional.
+
 
 Em produção, utilizar HTTPS no Grafana e no Zabbix.
