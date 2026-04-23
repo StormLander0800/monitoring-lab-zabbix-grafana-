@@ -1,164 +1,86 @@
-# Arquitetura do Lab de Monitoramento – Zabbix + Grafana
+# Arquitetura do laboratório
 
-Este documento descreve a arquitetura lógica do ambiente de monitoramento criado com **Zabbix Server** e **Grafana**, utilizando **MariaDB/MySQL** como banco de dados e preparando o terreno para integração com **Active Directory/LDAP**.
+Este documento descreve a arquitetura lógica do ambiente de monitoramento construído com **Zabbix**, **Grafana** e **MariaDB**, com trilha planejada de autenticação centralizada via **Active Directory / LDAP**.
 
----
+## Objetivo arquitetural
 
-## 1. Visão Geral do Ambiente
+O laboratório foi desenhado para simular um cenário realista de monitoramento de infraestrutura, com uma estação central de coleta e visualização, hosts monitorados em sistemas diferentes e possibilidade de integração com diretório corporativo.
 
-### 1.1. Servidor de Monitoramento
+## Componentes do ambiente
 
-- **Hostname (lab):** `SVR-ZABBIX`
-- **Domain Name (lab):** `zabbix.virtualbox.org`
-- **Sistema Operacional:** Ubuntu Server 22.04 (VM no VirtualBox)
-- **Endereço IP:** `192.168.4.212`
+### Servidor principal de monitoramento
 
-**Serviços principais rodando neste servidor:**
+- **Hostname:** `SVR-ZABBIX`
+- **Sistema operacional:** Ubuntu Server 22.04
+- **Execução:** máquina virtual em VirtualBox
+- **Função:** concentrar a pilha principal do ambiente
 
-- Zabbix Server  
-- Zabbix Frontend (Apache + PHP)  
-- Zabbix Agent  
-- MariaDB/MySQL (banco de dados `zabbix`)  
-- Grafana  
+**Serviços previstos no host:**
 
-### 1.2. Outros Componentes do Lab
+- Zabbix Server
+- Zabbix Frontend
+- Zabbix Agent local
+- MariaDB/MySQL
+- Grafana
+- Apache + PHP
 
-- **Controlador de Domínio / AD (ex.: `SVR02`)**
-  - Sistema: Windows Server (AD DS)
-  - Serviços: Active Directory, DNS, (opcionalmente) Zabbix Agent
-  - Domínio AD de exemplo: `joao23.local`
-  - IP: `<IP_DO_AD>` (ex.: `192.168.1.2`)
+### Hosts monitorados
 
-- **Estações / Notebooks**
-  - Windows 10/11 ou Linux
-  - Com Zabbix Agent instalado e reportando para o `SVR-ZABBIX`
+O ambiente prevê monitoramento de:
 
-- **Cliente/Operador**
-  - Acessa o ambiente via navegador:
-    - Zabbix: `http://192.168.4.212/zabbix`
-    - Grafana: `http://192.168.4.212:3000/`
+- servidores Linux;
+- hosts Windows;
+- controlador de domínio/serviços AD;
+- estações e equipamentos relevantes para demonstração do lab.
 
----
+### Diretório corporativo
 
-## 2. Serviços e Endpoints
+- **Tecnologia:** Active Directory / LDAP
+- **Objetivo:** autenticação centralizada de usuários no Zabbix
+- **Status:** planejado/documentado para evolução do laboratório
 
-### 2.1. Zabbix
+## Fluxos principais de comunicação
 
-- **Frontend Web:**
-  - URL: `http://192.168.4.212/zabbix`
-- **Backend (zabbix-server):**
-  - Serviço responsável por:
-    - Coletar dados dos agentes
-    - Avaliar triggers
-    - Gerenciar eventos, problemas e ações
-- **Zabbix Agent (servidor):**
-  - Rodando no próprio `SVR-ZABBIX` para monitorar o host de monitoramento
-
-### 2.2. Banco de Dados (MariaDB/MySQL)
-
-- **Banco:** `zabbix`
-- **Função:**
-  - Armazenar:
-    - Configuração (hosts, templates, triggers, macros etc.)
-    - Dados históricos (itens, trends)
-    - Problemas, eventos, auditoria
-
-### 2.3. Grafana
-
-- **URL:** `http://192.168.4.212:3000/`
-- **Função:**
-  - Consumir dados do Zabbix via API
-  - Exibir dashboards customizados para:
-    - Infraestrutura
-    - AD
-    - Problemas em tempo real
-    - Outros cenários
-
-### 2.4. Active Directory / LDAP (Integração Planejada)
-
-- **Domínio:** `joao23.local`
-- **Serviço:** LDAP (porta 389, opcional LDAPS 636)
-- **Função no contexto do lab:**
-  - Autenticação centralizada de usuários no Zabbix usando contas de domínio
-  - Possível mapeamento de grupos AD → grupos de permissão no Zabbix
-
----
-
-## 3. Fluxos de Comunicação
-
-### 3.1. Zabbix Server ↔ Zabbix Agents
+### 1. Zabbix Server ↔ Zabbix Agents
 
 - **Protocolo:** TCP
-- **Porta padrão do agente:** `10050`
-- **Direção:**
-  - Zabbix Server → Zabbix Agent (consultas passivas)
-  - Zabbix Agent → Zabbix Server (itens ativos, se configurados)
+- **Porta padrão:** `10050`
+- **Uso:** coleta de métricas, checagem de disponibilidade e leitura de itens configurados
 
-**Exemplos de fluxo:**
-
-- `SVR-ZABBIX` monitora ele mesmo:
-  - `zabbix_server` → `zabbix_agentd` (localhost:10050)
-- `SVR-ZABBIX` monitora `SVR02`:
-  - `192.168.4.212` → `192.168.<IP_DO_AD>:10050`
-
-### 3.2. Zabbix Server ↔ Banco de Dados
+### 2. Zabbix Server ↔ MariaDB
 
 - **Protocolo:** TCP
 - **Porta padrão:** `3306`
-- **Direção:**
-  - `zabbix_server` → `mysqld` (MariaDB/MySQL)
-- **Uso:**
-  - Consulta e gravação de:
-    - Itens
-    - Histórico
-    - Eventos
-    - Problemas
-    - Configurações
+- **Uso:** persistência de configuração, histórico, eventos, problemas e inventário
 
-### 3.3. Cliente ↔ Zabbix Frontend
+### 3. Usuário ↔ Zabbix Frontend
 
 - **Protocolo:** HTTP
-- **Porta:** `80`
-- **URL:** `http://192.168.4.212/zabbix`
+- **Porta base do lab:** `80`
+- **Uso:** administração do ambiente, hosts, triggers, ações e visualização operacional
 
-Fluxo:
-
-- Navegador do usuário → Apache → PHP → Zabbix Server (via banco e processos internos)
-
-### 3.4. Cliente ↔ Grafana
+### 4. Usuário ↔ Grafana
 
 - **Protocolo:** HTTP
-- **Porta:** `3000`
-- **URL:** `http://192.168.4.212:3000/`
+- **Porta base do lab:** `3000`
+- **Uso:** dashboards executivos, painéis técnicos e visão consolidada
 
-Fluxo:
+### 5. Grafana ↔ Zabbix API
 
-- Navegador → Grafana → (Data source Zabbix) → Zabbix API
+- **Protocolo:** HTTP / JSON-RPC
+- **Uso:** consulta de dados do Zabbix para painéis e visualizações personalizadas
 
-### 3.5. Grafana ↔ Zabbix API
+### 6. Zabbix ↔ AD/LDAP
 
-- **Protocolo:** HTTP (JSON-RPC)
-- **URL:** `http://192.168.4.212/zabbix/api_jsonrpc.php`
-- **Autenticação:**
-  - Usuário e senha do Zabbix (por exemplo, um usuário dedicado para Grafana)
+- **Protocolo:** LDAP ou LDAPS
+- **Portas usuais:** `389` / `636`
+- **Uso:** autenticação centralizada e futura associação com grupos de permissão
 
-### 3.6. Zabbix ↔ Active Directory (LDAP) – Planejado
-
-- **Protocolo:** LDAP
-- **Porta:** `389` (LDAPS: 636)
-- **Fluxo:**
-  - Zabbix server → AD:
-    - Faz **bind** com usuário de serviço (ex.: `zabbix ldap`)
-    - Busca usuário que tenta logar (`sAMAccountName` ou `userPrincipalName`)
-    - Valida credenciais
-
----
-
-## 4. Diagrama Lógico Simplificado
+## Diagrama lógico simplificado
 
 ```text
 [ Usuário ]
-   |                             
+   |                              
    | HTTP 80             HTTP 3000
    |------------------.   .-----------------> [ Grafana ]
                       |   |                        |
@@ -176,69 +98,40 @@ Fluxo:
      TCP 3306                 TCP 10050
           |                        |
     [ MariaDB ]              [ Zabbix Agents ]
-                               (SVR-ZABBIX, SVR02, PCs)
+                               (Linux, Windows, AD)
+```
 
-Zabbix Server → AD/LDAP (planejado)
-  - TCP 389
-  - Autenticação de usuários do domínio
---
----
+## Decisões de desenho
 
-## 5. Objetivo da Arquitetura
+### Arquitetura monolítica para laboratório
 
-Esta arquitetura foi pensada para:
+A pilha principal foi consolidada em um único servidor para simplificar implantação, reduzir consumo de recursos e facilitar aprendizado.
 
-Representar um cenário realista de monitoramento:
+### Virtualização em VirtualBox
 
-Servidor dedicado (SVR-ZABBIX) concentrando Zabbix, banco e Grafana.
+A escolha favorece reprodutibilidade em ambiente local, especialmente para estudo, demonstração e portfólio técnico.
 
-Hosts Windows/Linux monitorados via agente.
+### Grafana como camada de visualização
 
-Controlador de domínio (AD) integrado para autenticação.
+O Grafana complementa o frontend do Zabbix com dashboards mais executivos, melhorando apresentação, análise e leitura visual de métricas.
 
-Servir como lab de estudo e portfólio:
+### LDAP/AD como trilha de maturidade
 
-Permite testar:
+A integração com diretório agrega valor corporativo ao laboratório, aproximando o ambiente de cenários reais de governança e autenticação.
 
-Coleta de métricas.
+## Riscos e limitações do cenário atual
 
-Criação de dashboards.
+- único ponto de falha no servidor principal;
+- ausência de TLS/HTTPS no fluxo base documentado;
+- escalabilidade limitada para ambientes maiores;
+- ausência de separação entre aplicação, banco e visualização;
+- dependência de ajustes manuais em scripts e credenciais.
 
-Alertas, triggers e integrações.
+## Evolução recomendada para cenário mais maduro
 
-Autenticação centralizada com AD/LDAP.
-
-Facilitar futura migração para produção:
-
-Separando funções (banco, aplicação, visualização).
-
-Permitindo escalar (separar MariaDB, Grafana, proxies Zabbix, etc.).
-
----
-
-## 6. Considerações de Produção (Além do Lab)
-
-Para um ambiente real, a mesma arquitetura pode ser endurecida com:
-
-Zabbix Server em servidor dedicado ou cluster.
-
-Banco de dados em servidor separado, com backup e tuning.
-
-Grafana em instância separada, com HTTPS e autenticação integrada (LDAP/SSO).
-
-Proxies do Zabbix em filiais / redes remotas.
-
-Uso de HTTPS para:
-
-Zabbix Frontend
-
-API do Zabbix (consumida pelo Grafana)
-
-Hardening de firewall:
-
-Expor apenas portas necessárias para redes específicas.
-
-Este documento descreve como o lab está organizado e abre caminho para evolução do ambiente em direção a um cenário de produção mais robusto.
-
-
-
+- separar MariaDB, Zabbix e Grafana em camadas dedicadas;
+- aplicar HTTPS/LDAPS;
+- adicionar backup automatizado e restore testado;
+- implementar Zabbix Proxy em redes remotas;
+- incluir alta disponibilidade conforme criticidade do ambiente;
+- reforçar hardening e monitoração da própria pilha.
