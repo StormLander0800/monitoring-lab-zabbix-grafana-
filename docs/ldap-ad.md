@@ -1,165 +1,116 @@
----
+# Integração com LDAP / Active Directory
 
-### `docs/ldap-ad.md`
+Este documento descreve a trilha de integração do Zabbix com **Active Directory** para autenticação via **LDAP**.
 
-```markdown
-# Integração Zabbix com Active Directory / LDAP
+## Objetivo
 
-Este documento descreve como integrar o Zabbix com um domínio **Active Directory** para autenticação via LDAP.
+Permitir que usuários do domínio autentiquem no Zabbix com credenciais corporativas, aproximando o laboratório de um cenário real de governança e controle de acesso.
 
-## 1. Ambiente AD (Exemplo)
+## Exemplo de ambiente
 
-- Controlador de domínio: `SVR02`
-- Domínio: `joao23.local`
-- IP do DC: `<IP_AD>`
-- Usuário de serviço (bind):
-  - `zabbix ldap`
-  - DN: `CN=zabbix ldap,OU=zabbix,DC=joao23,DC=local`
+- **Controlador de domínio:** `SVR02`
+- **Domínio:** `joao23.local`
+- **IP do DC:** `<IP_AD>`
+- **Usuário de bind:** `zabbix ldap`
+- **DN de exemplo:** `CN=zabbix ldap,OU=zabbix,DC=joao23,DC=local`
 
 Usuário de teste:
 
 - `sAMAccountName`: `washington.meireles`
 - `userPrincipalName`: `washington.meireles@joao23.local`
 
-## 2. Ferramentas de Teste (ldapsearch)
+## Teste com `ldapsearch`
 
-Instalar:
+Instale utilitários:
 
 ```bash
 sudo apt install -y ldap-utils
-Teste de bind + busca:
+```
 
-ldapsearch -x -H ldap://<IP_AD>:389 \
-  -D "CN=zabbix ldap,OU=zabbix,DC=joao23,DC=local" -W \
-  -b "DC=joao23,DC=local" "(sAMAccountName=washington.meireles)"
-Resultado esperado:
+Exemplo de teste:
 
+```bash
+ldapsearch -x -H ldap://<IP_AD>:389   -D "CN=zabbix ldap,OU=zabbix,DC=joao23,DC=local" -W   -b "DC=joao23,DC=local" "(sAMAccountName=washington.meireles)"
+```
+
+Retorno esperado:
+
+```text
 result: 0 Success
+```
 
-Atributos do usuário retornados (sAMAccountName, CN, UPN, etc.)
+## Configuração no Zabbix
 
-Se retornar Invalid credentials (49):
+Caminho sugerido:
 
-Verificar:
-
-DN do usuário de bind.
-
-Senha.
-
-Se conta está bloqueada/desabilitada.
-
-3. Configuração no Zabbix
-No Zabbix:
-
+```text
 Administração → Autenticação → Servidores LDAP → Criar servidor LDAP
+```
 
-Preencher:
+### Campos principais
 
-Nome: SVR02 (exemplo)
+- **Nome:** `SVR02` ou nome lógico do servidor LDAP
+- **Host:** `<IP_AD>`
+- **Porta:** `389`
+- **Base DN:** `DC=joao23,DC=local`
+- **Atributo de pesquisa:** `sAMAccountName`
+- **Bind DN:** `CN=zabbix ldap,OU=zabbix,DC=joao23,DC=local`
+- **Senha do bind:** `<SENHA_ZABBIX_LDAP>`
+- **Filtro de busca:** `(&(objectClass=user)(sAMAccountName={user}))`
 
-Host: <IP_AD>
+> Para laboratório, o uso de LDAP simples pode ser suficiente. Para produção, prefira **LDAPS** ou **StartTLS**.
 
-Porta: 389
+## Habilitação da autenticação LDAP
 
-Base DN: DC=joao23,DC=local
+Ainda em autenticação:
 
-Atributo de pesquisa: sAMAccountName
+- alterar o tipo de autenticação para **LDAP**;
+- selecionar o servidor LDAP cadastrado;
+- salvar as configurações.
 
-Bind DN:
-CN=zabbix ldap,OU=zabbix,DC=joao23,DC=local
+## Criação de usuários no Zabbix
 
-Senha para o Bind: <SENHA_ZABBIX_LDAP>
+Mesmo usando LDAP, normalmente é necessário definir usuários/grupos locais no Zabbix para controle de perfil e permissões.
 
-StartTLS: desmarcado (para lab; em produção usar LDAPS/TLS)
+Exemplo:
 
-Filtro de busca:
-(&(objectClass=user)(sAMAccountName={user}))
+- usuário: `washington.meireles`
+- autenticação: LDAP
+- grupo: `Zabbix administrators` ou grupo customizado
 
-Clicar em Adicionar.
+## Mapeamento de grupos
 
-Testar conexão
+Em ambientes mais maduros, o ideal é mapear grupos do AD para grupos do Zabbix, permitindo:
 
-Botão Testar
+- centralização de acesso;
+- delegação de administração por área;
+- controle mais limpo de permissões.
 
-No popup:
+## Troubleshooting
 
-Login: washington.meireles
+### `Can't contact LDAP server`
 
-Senha do usuário: senha real deste usuário no AD
+- validar IP e porta;
+- testar conectividade de rede;
+- revisar firewall;
+- validar nome do host e resolução DNS.
 
-Se tudo estiver correto, o teste deve passar.
+### `Invalid credentials (49)`
 
-4. Habilitar Autenticação LDAP
-Ainda em Administração → Autenticação:
+- revisar bind DN;
+- revisar senha do usuário de bind;
+- validar se a conta está ativa.
 
-Na aba Geral:
+### Usuário não encontrado
 
-Tipo de autenticação: LDAP
+- revisar filtro de busca;
+- validar se o login usa `sAMAccountName` ou `userPrincipalName`;
+- testar busca manual com `ldapsearch`.
 
-Servidor LDAP: SVR02
+## Recomendação para produção
 
-Salvar.
-
-5. Usuários no Zabbix
-Criar usuários vinculados ao AD:
-
-Administração → Utilizadores → Criar usuário
-
-Campos principais:
-
-Alias/Username: washington.meireles
-
-Tipo de autenticação: LDAP
-
-Grupos de utilizadores: por exemplo, Zabbix administrators (ou grupo customizado)
-
-Salvar.
-
-Agora, o login no Zabbix pode ser feito com:
-
-Usuário: washington.meireles
-
-Senha: senha do domínio (AD).
-
-6. Mapeamento de Grupos
-Em produção, é comum:
-
-Criar grupos no AD (ex.: TI-Monitoramento).
-
-Criar grupos de utilizadores equivalentes no Zabbix (ex.: TI-Monitoramento).
-
-Utilizar as opções de integração do Zabbix (versões mais recentes) para mapear grupos AD → grupos Zabbix.
-
-Isso permite:
-
-Controle de acesso centralizado (perfis diferentes por área).
-
-Gerenciamento simples via AD.
-
-7. Troubleshooting
-Problemas comuns:
-
-“Can't contact LDAP server”
-
-IP/porta incorretos.
-
-Firewall bloqueando porta 389.
-
-“Invalid credentials (49)”
-
-Bind DN ou senha errados.
-
-Conta bloqueada/expirada.
-
-Usuário não encontrado
-
-Filtro de busca não bate com atributo usado (ex.: login é UPN, mas filtro usa sAMAccountName).
-
-Ajustar Atributo de pesquisa e Filtro de busca:
-
-Para login via UPN (e-mail):
-
-Atributo: userPrincipalName
-
-
-Filtro: (&(objectClass=user)(userPrincipalName={user}))
+- usar conta de serviço dedicada;
+- restringir permissões da conta de bind;
+- preferir LDAPS/StartTLS;
+- documentar grupos e perfis;
+- auditar acessos e revisões de permissão.
