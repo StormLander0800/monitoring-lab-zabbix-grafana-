@@ -1,14 +1,17 @@
+# Banco de dados do Zabbix
 
----
+Este documento descreve a configuração do **MariaDB/MySQL** como banco de dados do Zabbix no laboratório.
 
-### `docs/banco-de-dados.md`
+## Objetivo
 
-```markdown
-# Banco de Dados – MariaDB/MySQL para Zabbix
+Provisionar um banco dedicado para armazenar:
 
-Este documento descreve a configuração do banco de dados **MariaDB/MySQL** utilizado pelo Zabbix.
+- configuração de hosts, grupos, templates e triggers;
+- histórico de métricas e trends;
+- eventos, problemas e auditoria;
+- parâmetros operacionais do frontend e do servidor.
 
-## 1. Instalação do MariaDB/MySQL
+## Instalação do MariaDB
 
 No Ubuntu 22.04:
 
@@ -18,83 +21,94 @@ sudo apt install -y mariadb-server mariadb-client
 sudo systemctl enable mariadb
 sudo systemctl start mariadb
 sudo systemctl status mariadb
-2. Configuração Básica de Segurança
-Opcional, mas recomendado:
+```
 
+## Hardening inicial
+
+Opcional, mas recomendado mesmo em laboratório:
+
+```bash
 sudo mysql_secure_installation
-Passos típicos:
+```
 
-Definir senha para o usuário root.
+Etapas típicas:
 
-Remover usuários anônimos.
+- definir senha do `root` quando aplicável;
+- remover usuários anônimos;
+- remover base de testes;
+- revisar política de acesso remoto do usuário administrativo.
 
-Remover banco de teste.
+## Criação do banco e do usuário do Zabbix
 
-Desabilitar login remoto do root (conforme necessidade do lab/produção).
+Acesse o shell do MariaDB:
 
-3. Criação do Banco e Usuário para o Zabbix
-Acessar o MySQL/MariaDB:
-
+```bash
 sudo mysql -uroot -p
-Dentro do shell:
+```
 
+Execute:
 
+```sql
 CREATE DATABASE zabbix CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
-
 CREATE USER 'zabbix'@'localhost' IDENTIFIED BY '<SENHA_BANCO_ZABBIX>';
-
 GRANT ALL PRIVILEGES ON zabbix.* TO 'zabbix'@'localhost';
-
 FLUSH PRIVILEGES;
 EXIT;
-Banco: zabbix
+```
 
-Usuário: zabbix@localhost
+## Importação do schema do Zabbix
 
-Senha: <SENHA_BANCO_ZABBIX>
+Após instalar os pacotes do Zabbix:
 
-4. Importar Schema do Zabbix
-Após instalar pacotes do Zabbix:
+```bash
+zcat /usr/share/zabbix-sql-scripts/mysql/server.sql.gz |   mysql -uzabbix -p'<SENHA_BANCO_ZABBIX>' zabbix
+```
 
+Validação rápida:
 
-zcat /usr/share/zabbix-sql-scripts/mysql/server.sql.gz | \
-  mysql -uzabbix -p'<SENHA_BANCO_ZABBIX>' zabbix
-Verificar:
-
-
+```bash
 mysql -uzabbix -p'<SENHA_BANCO_ZABBIX>' zabbix -e "show tables;" | head
-5. Ajustes de Configuração (opcional)
-Arquivo principal do MariaDB (varia de distro):
+```
 
+## Teste de conectividade
+
+```bash
+mysql -uzabbix -p'<SENHA_BANCO_ZABBIX>' -h localhost zabbix -e "select 1;"
+```
+
+Se o retorno for `1`, a conexão base está operacional.
+
+## Ajustes opcionais para ambientes maiores
+
+Arquivo comum de configuração:
+
+```text
 /etc/mysql/mariadb.conf.d/50-server.cnf
-ou equivalente.
+```
 
-Parâmetros comuns para ambientes maiores (não crítico em lab):
+Exemplo de parâmetros que podem ser avaliados em cenários mais robustos:
 
-ini
-Copiar código
+```ini
 [mysqld]
 innodb_buffer_pool_size = 1G
 innodb_log_file_size    = 256M
 max_connections         = 200
-Em laboratório, ajustes finos não são obrigatórios, mas em produção é importante calibrar memória, logs e conexões conforme tamanho do ambiente.
+```
 
-6. Testes de Conectividade
-Testar acesso com usuário do Zabbix:
+> Para laboratório, tuning avançado não é obrigatório. Em produção, o sizing deve considerar volume de métricas, retenção, quantidade de hosts e perfil de consulta.
 
-mysql -uzabbix -p'<SENHA_BANCO_ZABBIX>' -h localhost zabbix -e "select 1;"
-Se retornar 1, a conexão está OK.
+## Backup lógico
 
-7. Backup (conceito)
-Sugestão simples de backup lógico:
+Exemplo simples:
 
+```bash
 mysqldump -u zabbix -p'<SENHA_BANCO_ZABBIX>' zabbix > /backup/zabbix_$(date +%F).sql
-Em produção, considerar:
+```
 
-Backups agendados (cron).
+## Recomendações de produção
 
-Backup off-site.
-
-Testes regulares de restauração.
-
-
+- agendar backups automáticos;
+- manter cópia externa/off-site;
+- testar restauração regularmente;
+- revisar retenção de histórico e trends;
+- endurecer autenticação e exposição do banco.
