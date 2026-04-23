@@ -1,123 +1,93 @@
+# Instalação e integração do Grafana
 
----
+Este documento descreve a instalação do **Grafana** e sua integração com o **Zabbix** no laboratório.
 
-### `docs/instalacao-grafana.md`
+## Objetivo
 
-```markdown
-# Instalação e Integração do Grafana com Zabbix
+Adicionar uma camada visual mais flexível para:
 
-Este documento descreve a instalação do **Grafana** e a configuração da integração com o **Zabbix** via API.
+- painéis executivos;
+- visualização consolidada da infraestrutura;
+- leitura histórica de métricas;
+- criação de dashboards mais amigáveis para acompanhamento operacional.
 
-## 1. Instalação do Grafana (Ubuntu 22.04)
+## Instalação do Grafana
 
-Adicionar repositório oficial:
+### 1. Adicionar repositório
 
 ```bash
-sudo apt install -y apt-transport-https software-properties-common wget
-
 wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -
-
-echo "deb https://packages.grafana.com/oss/deb stable main" | \
-  sudo tee /etc/apt/sources.list.d/grafana.list
-
+echo "deb https://packages.grafana.com/oss/deb stable main" |   sudo tee /etc/apt/sources.list.d/grafana.list
 sudo apt update
+```
+
+### 2. Instalar pacote
+
+```bash
 sudo apt install -y grafana
-Habilitar e iniciar serviço:
+```
 
+### 3. Habilitar serviço
 
+```bash
 sudo systemctl enable grafana-server
 sudo systemctl start grafana-server
 sudo systemctl status grafana-server
-2. Primeiro Acesso ao Grafana
-No navegador:
+```
 
+## Primeiro acesso
 
+```text
 http://<IP_ZABBIX>:3000/
-Credenciais padrão:
+```
 
+Credenciais padrão iniciais do Grafana costumam ser:
+
+```text
 Usuário: admin
-
 Senha: admin
+```
 
-No primeiro login, Grafana solicita a troca da senha.
-No repositório, use placeholders:
+> Na primeira autenticação, altere a senha imediatamente.
 
-Nova senha: <SENHA_ADMIN_GRAFANA>
+## Integração com Zabbix
 
-3. Instalar Plugin Zabbix no Grafana
-No servidor (opcional, se não vier no pacote):
+A integração normalmente é feita por plugin/data source compatível com a API do Zabbix.
 
-sudo grafana-cli plugins install alexanderzobnin-zabbix-app
-sudo systemctl restart grafana-server
-Ou utilizar plugins disponíveis via interface web (Admin → Plugins).
+### Informações necessárias
 
-4. Configurar Fonte de Dados Zabbix
-No Grafana (PT-BR):
+- URL do frontend/API do Zabbix;
+- usuário com permissão de leitura na API;
+- senha do usuário do Zabbix;
+- validação de conectividade entre Grafana e Zabbix.
 
-Menu lateral → Conexões → Fontes de dados.
+### Exemplo de endpoint da API
 
-Clique em Adicionar fonte de dados.
-
-Selecione Zabbix.
-
-Configuração principal:
-
-Name / Nome: Zabbix
-
-URL:
+```text
 http://<IP_ZABBIX>/zabbix/api_jsonrpc.php
+```
 
-Access: Server (recomendado quando Grafana e Zabbix estão no mesmo host).
+## Fluxo de uso
 
-Seção Zabbix API details:
+1. instalar plugin/data source do Zabbix no Grafana;
+2. cadastrar a URL da API;
+3. informar credenciais de acesso;
+4. validar conexão;
+5. importar ou criar dashboards.
 
-User: usuário do Zabbix com permissão de leitura (ex.: grafana-api ou Admin em lab).
+## Sugestões de dashboards
 
-Password: <SENHA_USUARIO_ZABBIX_PARA_GRAFANA>
+- infraestrutura geral;
+- consumo de CPU, memória e disco;
+- disponibilidade de hosts críticos;
+- problemas por severidade;
+- visão por grupo de hosts;
+- painéis específicos para AD, servidores ou serviços.
 
-Salvar e testar:
+## Boas práticas
 
-Botão Save & Test → Deve retornar algo como “Data source is working”.
-
-5. Criar Dashboards Básicos
-5.1. Dashboard de Infraestrutura
-Menu → Painéis de controle → Novo painel.
-
-Fonte de dados: Zabbix.
-
-Modo de consulta: Metrics.
-
-Selecionar:
-
-Group: Servidores Linux, Servidores Windows, etc.
-
-Host: Zabbix server, SVR02, etc.
-
-Application: CPU, Memory, Filesystem.
-
-Item: CPU utilization, Memory utilization, Free disk space, etc.
-
-5.2. Dashboard de Problemas em Tempo Real
-Novo painel.
-
-Fonte de dados: Zabbix.
-
-Modo de consulta: Problems.
-
-Filtrar:
-
-Severidade mínima (Warning, Average, High, etc.).
-
-Groups de hosts específicos (Infra, AD, Rede, etc.).
-
-Este painel pode ser usado como visão geral em TV/monitor na sala de TI.
-
-6. Boas Práticas
-Criar um usuário específico no Zabbix para o Grafana (ex.: grafana-api).
-
-Atribuir apenas permissões necessárias (somente leitura).
-
-Trocar a senha padrão do admin do Grafana assim que o ambiente estiver funcional.
-
-
-Em produção, utilizar HTTPS no Grafana e no Zabbix.
+- criar usuário dedicado do Zabbix para o Grafana;
+- evitar uso da conta administrativa padrão;
+- restringir acesso à porta 3000;
+- aplicar HTTPS em ambientes mais maduros;
+- versionar/exportar dashboards importantes.
