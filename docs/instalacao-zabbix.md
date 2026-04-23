@@ -1,135 +1,155 @@
+# Instalação do Zabbix Server no Ubuntu 22.04
 
----
+Este documento descreve a instalação base do **Zabbix Server**, **frontend** e **agent** em um servidor Ubuntu 22.04 utilizado como nó principal do laboratório.
 
-### `docs/instalacao-zabbix.md`
+## Escopo
 
-```markdown
-# Instalação e Configuração do Zabbix Server (Ubuntu 22.04)
+Este guia cobre:
 
-Este documento descreve o processo de instalação do **Zabbix Server**, **Frontend** e **Agent** em uma VM Ubuntu Server 22.04 (SVR-ZABBIX).
+- preparação do sistema operacional;
+- instalação do banco MariaDB;
+- instalação do Zabbix Server, frontend e agent;
+- configuração inicial do `zabbix_server.conf`;
+- ajustes básicos de Apache/PHP;
+- primeiro acesso via interface web.
 
-## 1. Preparação do Sistema
-
-Atualizar pacotes:
+## 1. Preparação do sistema
 
 ```bash
 sudo apt update
 sudo apt upgrade -y
-Instalar utilitários básicos:
+sudo apt install -y vim nano curl wget net-tools sysstat   software-properties-common gnupg2
+```
 
-sudo apt install -y vim nano curl wget net-tools sysstat \
-  software-properties-common gnupg2
-2. Configurar Locale e Timezone
-Timezone:
+## 2. Locale e timezone
 
+```bash
 sudo timedatectl set-timezone America/Sao_Paulo
-Locales (português Brasil):
-
 sudo apt install -y language-pack-pt
 sudo locale-gen pt_BR.UTF-8
 sudo update-locale
-3. Instalação do Banco de Dados (MariaDB/MySQL)
-Instalar servidor de banco:
+```
 
+## 3. Banco de dados
+
+Instale o MariaDB:
+
+```bash
 sudo apt install -y mariadb-server mariadb-client
 sudo systemctl enable mariadb
 sudo systemctl start mariadb
-(Detalhes de criação do banco e usuário no arquivo banco-de-dados.md.)
+```
 
-4. Adicionar Repositório do Zabbix
-Exemplo usando Zabbix 7.0 em Ubuntu 22.04:
+A criação do banco e do usuário está detalhada em [`banco-de-dados.md`](banco-de-dados.md).
 
+## 4. Repositório do Zabbix
 
+Exemplo para Zabbix 7.0 em Ubuntu 22.04:
+
+```bash
 cd /tmp
 wget https://repo.zabbix.com/zabbix/7.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_7.0-1+ubuntu22.04_all.deb
-
 sudo dpkg -i zabbix-release_7.0-1+ubuntu22.04_all.deb
 sudo apt update
-5. Instalar Zabbix Server, Frontend e Agent
+```
 
-sudo apt install -y zabbix-server-mysql zabbix-frontend-php \
-  zabbix-apache-conf zabbix-sql-scripts zabbix-agent
-6. Importar Schema do Zabbix no Banco
-Após criar o banco e o usuário (ver banco-de-dados.md):
+## 5. Instalação dos pacotes
 
-zcat /usr/share/zabbix-sql-scripts/mysql/server.sql.gz | \
-  mysql -uzabbix -p'<SENHA_BANCO_ZABBIX>' zabbix
-Verificar se as tabelas foram criadas:
+```bash
+sudo apt install -y zabbix-server-mysql zabbix-frontend-php   zabbix-apache-conf zabbix-sql-scripts zabbix-agent
+```
 
+## 6. Importação do schema
 
+```bash
+zcat /usr/share/zabbix-sql-scripts/mysql/server.sql.gz |   mysql -uzabbix -p'<SENHA_BANCO_ZABBIX>' zabbix
+```
+
+Verifique as tabelas:
+
+```bash
 mysql -uzabbix -p'<SENHA_BANCO_ZABBIX>' zabbix -e "show tables;" | head
-7. Configurar zabbix_server.conf
-Editar:
+```
 
+## 7. Configuração do `zabbix_server.conf`
 
+Edite o arquivo:
+
+```bash
 sudo nano /etc/zabbix/zabbix_server.conf
-Ajustar:
+```
 
+Ajuste os parâmetros mínimos:
+
+```ini
 DBHost=localhost
 DBName=zabbix
 DBUser=zabbix
 DBPassword=<SENHA_BANCO_ZABBIX>
-Salvar e sair.
+```
 
-8. Configurar PHP/Apache para o Zabbix
-O pacote zabbix-apache-conf normalmente cria /etc/apache2/conf-enabled/zabbix.conf.
+## 8. Configuração do PHP/Apache
 
-Pontos importantes:
+Ajuste o timezone do PHP para o frontend do Zabbix:
 
-Timezone PHP:
-
-Dentro de zabbix.conf (ou outro arquivo de PHP do Zabbix):
-
-
+```ini
 php_value date.timezone America/Sao_Paulo
-Validar configuração do Apache:
+```
 
+Valide o Apache:
 
+```bash
 sudo apache2ctl configtest
-# Deve retornar "Syntax OK"
-Reiniciar Apache:
+```
 
+Reinicie os serviços:
 
+```bash
 sudo systemctl restart apache2
 sudo systemctl enable apache2
-9. Iniciar Serviços do Zabbix
-
 sudo systemctl restart zabbix-server zabbix-agent
 sudo systemctl enable zabbix-server zabbix-agent
-sudo systemctl status zabbix-server
-O zabbix-server deve ficar active (running).
+```
 
-10. Primeiro Acesso ao Zabbix
-No navegador:
+## 9. Primeiro acesso
 
+Abra no navegador:
+
+```text
 http://<IP_ZABBIX>/zabbix
-Seguir o wizard:
+```
 
-Escolher idioma (Português).
+No assistente web:
 
-Validar pré-requisitos.
+1. selecione o idioma;
+2. valide os pré-requisitos;
+3. informe banco, usuário e senha;
+4. confirme as configurações;
+5. finalize a instalação.
 
-Configurar DB:
+## 10. Credenciais iniciais
 
-Tipo: MySQL
-
-Host: localhost
-
-DB: zabbix
-
-Usuário: zabbix
-
-Senha: <SENHA_BANCO_ZABBIX>
-
-Confirmar configurações.
-
-Finalizar instalação.
-
-Login inicial:
-
+```text
 Usuário: Admin
+Senha: zabbix
+```
 
-Senha padrão: zabbix (recomendado trocar em seguida).
+> Recomenda-se trocar a senha padrão imediatamente.
 
+## Verificações pós-instalação
 
-Em lab, pode ser mudada para outra senha forte, documentada fora do repositório ou usando placeholders neste projeto.
+- `systemctl status zabbix-server`
+- `systemctl status zabbix-agent`
+- `systemctl status apache2`
+- teste de acesso ao frontend;
+- teste de coleta do host local.
+
+## Observações
+
+Este guia atende bem o laboratório documentado. Para produção, revisar:
+
+- HTTPS;
+- retenção de dados;
+- tuning do banco;
+- sizing de CPU, RAM e disco;
+- permissões e segregação de funções.
